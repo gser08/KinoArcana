@@ -30,9 +30,44 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .card-hover:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2); }
-        .range-slider { -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; }
-        .range-slider::-webkit-slider-track { background: #374151; height: 6px; border-radius: 3px; }
-        .range-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; background: #8b5cf6; height: 20px; width: 20px; border-radius: 50%; margin-top: -7px; }
+        
+        /* --- Estilos de Slider Actualizados --- */
+        .range-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent; /* El fondo ahora se aplica con JavaScript */
+            cursor: pointer;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+        }
+        .range-slider::-webkit-slider-track {
+            background: transparent;
+            border: transparent;
+        }
+        .range-slider::-moz-range-track {
+            background: transparent;
+            border: transparent;
+        }
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #a78bfa; /* Morado más claro para contraste */
+            border: 2px solid #8b5cf6;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            margin-top: -7px;
+        }
+        .range-slider::-moz-range-thumb {
+            background: #a78bfa;
+            border: 2px solid #8b5cf6;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+        }
+
         .tooltip { position: relative; display: inline-block; }
         .tooltip .tooltiptext { visibility: hidden; width: 220px; background-color: #1f2937; color: #fff; text-align: center; border-radius: 6px; padding: 8px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -110px; opacity: 0; transition: opacity 0.3s; font-size: 0.75rem; border: 1px solid #4b5563; }
         .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
@@ -96,30 +131,54 @@
                             <input type="text" id="language" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 transition-all" placeholder="Ej: ja, ko, es...">
                         </div>
                     </div>
-                    
-                    <div class="border-t border-gray-700 pt-6 space-y-6">
-                         <div class="grid md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-medium mb-2 text-gray-300"><span data-lang-key="filterYear">Año de Lanzamiento</span>: <span id="yearRangeLabel" class="text-purple-400 font-bold">1980 - 2025</span></label>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <input type="range" id="startYear" min="1900" max="2025" value="1980" class="w-full range-slider"><input type="range" id="endYear" min="1900" max="2025" value="2025" class="w-full range-slider">
+                    <div class="border-t border-gray-700 pt-6 space-y-8"> <!-- Aumentado el espacio para mayor claridad -->
+                         <!-- Rango de Años - NUEVA ESTRUCTURA -->
+                        <div>
+                            <label class="block text-sm font-medium mb-3 text-gray-300"><span data-lang-key="filterYear">Año de Lanzamiento</span>: <span id="yearRangeLabel" class="text-purple-400 font-bold">1980 - 2025</span></label>
+                            <div class="flex items-center gap-4">
+                                <div class="flex-1">
+                                    <input type="range" id="startYear" min="1900" max="2025" value="1980" class="w-full range-slider">
+                                    <div id="startYearValue" class="text-center text-xs text-gray-400 mt-1">1980</div>
                                 </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-2 text-gray-300"><span data-lang-key="filterRating">Puntuación</span>: <span id="ratingRangeLabel" class="text-purple-400 font-bold">7.0 - 10</span></label>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <input type="range" id="startRating" min="0" max="10" step="0.1" value="7.0" class="w-full range-slider"><input type="range" id="endRating" min="0" max="10" step="0.1" value="10" class="w-full range-slider">
+                                <span class="text-gray-500 font-bold">-</span>
+                                <div class="flex-1">
+                                    <input type="range" id="endYear" min="1900" max="2025" value="2025" class="w-full range-slider">
+                                    <div id="endYearValue" class="text-center text-xs text-gray-400 mt-1">2025</div>
                                 </div>
                             </div>
                         </div>
+                        <!-- Rango de Puntuación - NUEVA ESTRUCTURA -->
                         <div>
-                            <label class="block text-sm font-medium mb-2 text-gray-300">
+                            <label class="block text-sm font-medium mb-3 text-gray-300"><span data-lang-key="filterRating">Puntuación</span>: <span id="ratingRangeLabel" class="text-purple-400 font-bold">7.0 - 10</span></label>
+                            <div class="flex items-center gap-4">
+                                <div class="flex-1">
+                                    <input type="range" id="startRating" min="0" max="10" step="0.1" value="7.0" class="w-full range-slider">
+                                    <div id="startRatingValue" class="text-center text-xs text-gray-400 mt-1">7.0</div>
+                                </div>
+                                <span class="text-gray-500 font-bold">-</span>
+                                <div class="flex-1">
+                                    <input type="range" id="endRating" min="0" max="10" step="0.1" value="10" class="w-full range-slider">
+                                    <div id="endRatingValue" class="text-center text-xs text-gray-400 mt-1">10</div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Rango de Votos - NUEVA ESTRUCTURA -->
+                        <div>
+                            <label class="block text-sm font-medium mb-3 text-gray-300">
                                 <span data-lang-key="filterVoteCount">Cantidad de Votos</span>
                                 <span class="tooltip"><i class="fa-solid fa-circle-info text-gray-400"></i><span class="tooltiptext" data-lang-key="filterVoteCountTooltip">Usa un rango bajo para encontrar joyas ocultas, o un rango alto para encontrar clásicos aclamados.</span></span>
                                 : <span id="voteCountRangeLabel" class="text-purple-400 font-bold">100 - 1500</span>
                             </label>
-                            <div class="grid grid-cols-2 gap-4">
-                                <input type="range" id="startVoteCount" min="0" max="10000" step="50" value="100" class="w-full range-slider"><input type="range" id="endVoteCount" min="0" max="10000" step="50" value="1500" class="w-full range-slider">
+                             <div class="flex items-center gap-4">
+                                <div class="flex-1">
+                                    <input type="range" id="startVoteCount" min="0" max="10000" step="50" value="100" class="w-full range-slider">
+                                    <div id="startVoteCountValue" class="text-center text-xs text-gray-400 mt-1">100</div>
+                                </div>
+                                <span class="text-gray-500 font-bold">-</span>
+                                <div class="flex-1">
+                                    <input type="range" id="endVoteCount" min="0" max="10000" step="50" value="1500" class="w-full range-slider">
+                                    <div id="endVoteCountValue" class="text-center text-xs text-gray-400 mt-1">1500</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -332,6 +391,15 @@
                 startVoteCount: document.getElementById('startVoteCount'),
                 endVoteCount: document.getElementById('endVoteCount'),
                 voteCountRangeLabel: document.getElementById('voteCountRangeLabel'),
+                
+                // Elementos de valor individual añadidos
+                startYearValue: document.getElementById('startYearValue'),
+                endYearValue: document.getElementById('endYearValue'),
+                startRatingValue: document.getElementById('startRatingValue'),
+                endRatingValue: document.getElementById('endRatingValue'),
+                startVoteCountValue: document.getElementById('startVoteCountValue'),
+                endVoteCountValue: document.getElementById('endVoteCountValue'),
+
                 hiddenGemsPresetBtn: document.getElementById('hiddenGemsPreset'),
                 statusContainer: document.getElementById('statusContainer'),
                 resultsGrid: document.getElementById('resultsGrid'),
@@ -364,99 +432,123 @@
                 return translations[browserLang] ? browserLang : 'en';
             };
 
-            // --- EVENT LISTENERS ---
-            const setupEventListeners = () => {
-                dom.languageSelector.addEventListener('change', (e) => setLanguage(e.target.value));
-                dom.filterForm.addEventListener('submit', handleSearch);
-                dom.contentType.addEventListener('change', loadGenres);
-                dom.hiddenGemsPresetBtn.addEventListener('click', applyHiddenGemsPreset);
-                ['startYear', 'endYear'].forEach(id => document.getElementById(id).addEventListener('input', updateRangeLabel(dom.yearRangeLabel, dom.startYear, dom.endYear)));
-                ['startRating', 'endRating'].forEach(id => document.getElementById(id).addEventListener('input', updateRangeLabel(dom.ratingRangeLabel, dom.startRating, dom.endRating, 1)));
-                ['startVoteCount', 'endVoteCount'].forEach(id => document.getElementById(id).addEventListener('input', updateRangeLabel(dom.voteCountRangeLabel, dom.startVoteCount, dom.endVoteCount)));
-            };
-
             // --- API & DATA HANDLING ---
-            function isInvalidEnvironment() {
-                const protocol = window.location.protocol;
-                return protocol.startsWith('blob') || protocol.startsWith('file');
-            }
-            
             async function loadGenres() {
-                if (isInvalidEnvironment()) {
-                    updateStatus('error', translations[currentLang].statusErrorVercel);
-                    Array.from(dom.filterForm.elements).forEach(el => el.disabled = true);
-                    return;
-                }
-
                 const type = dom.contentType.value;
                 try {
-                    const langParam = `${currentLang}-${currentLang.toUpperCase()}`;
-                    const response = await fetch(`/api/genres?contentType=${type}&language=${langParam}`);
-                    if (!response.ok) throw new Error('Error al cargar géneros');
-                    const data = await response.json();
-                    
-                    const allGenresOption = dom.genre.querySelector('option[value=""]');
-                    dom.genre.innerHTML = '';
-                    if(allGenresOption) dom.genre.appendChild(allGenresOption);
+                    // Check if running locally vs on Vercel
+                    if (window.location.protocol === 'file:' || !window.location.host) {
+                        // Don't try to fetch genres if not on a server
+                        if (dom.genre) dom.genre.innerHTML = `<option value="">${translations[currentLang].filterGenreAll}</option>`;
+                        return;
+                    }
 
-                    data.genres.forEach(genre => {
-                        dom.genre.innerHTML += `<option value="${genre.id}">${genre.name}</option>`;
-                    });
+                    const response = await fetch(`/api/genres?contentType=${type}&language=${currentLang}`);
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    
+                    const data = await response.json();
+                    if (dom.genre) {
+                        dom.genre.innerHTML = `<option value="">${translations[currentLang].filterGenreAll}</option>`;
+                        if (data && data.genres) {
+                            data.genres.forEach(genre => {
+                                const option = document.createElement('option');
+                                option.value = genre.id;
+                                option.textContent = genre.name;
+                                dom.genre.appendChild(option);
+                            });
+                        }
+                    }
                 } catch (error) {
-                    console.error('Error cargando géneros:', error);
+                    console.error('Error fetching genres:', error);
                     updateStatus('error', translations[currentLang].statusErrorGenres);
                 }
             }
             
             async function handleSearch(e) {
                 if (e) e.preventDefault();
-                if (isInvalidEnvironment()) return;
+
+                // Check if the app is running on a local file or a non-server environment
+                if (window.location.protocol === 'file:' || !window.location.host) {
+                     updateStatus('error', translations[currentLang].statusErrorVercel);
+                     return;
+                }
 
                 updateStatus('loading');
                 
-                const langParam = `${currentLang}-${currentLang.toUpperCase()}`;
                 const params = new URLSearchParams({
                     contentType: dom.contentType.value,
-                    sort_by: dom.sortBy.value,
-                    'vote_average.gte': dom.startRating.value,
-                    'vote_average.lte': dom.endRating.value,
-                    'vote_count.gte': dom.startVoteCount.value,
-                    'vote_count.lte': dom.endVoteCount.value,
-                    language: langParam, 
-                    include_adult: false,
+                    sortBy: dom.sortBy.value,
+                    startYear: dom.startYear.value,
+                    endYear: dom.endYear.value,
+                    startRating: dom.startRating.value,
+                    endRating: dom.endRating.value,
+                    startVoteCount: dom.startVoteCount.value,
+                    endVoteCount: dom.endVoteCount.value,
+                    language: currentLang
                 });
 
-                if (dom.genre.value) params.append('with_genres', dom.genre.value);
-                if (dom.language.value) params.append('with_original_language', dom.language.value.trim());
-
-                const dateParamPrefix = dom.contentType.value === 'movie' ? 'primary_release_date' : 'first_air_date';
-                params.append(`${dateParamPrefix}.gte`, `${dom.startYear.value}-01-01`);
-                params.append(`${dateParamPrefix}.lte`, `${dom.endYear.value}-12-31`);
-
+                if (dom.genre.value) params.append('genre', dom.genre.value);
+                if (dom.language.value) params.append('originalLanguage', dom.language.value.trim());
+                
                 try {
                     const response = await fetch(`/api/discover?${params}`);
                     if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.status_message || `Error del servidor: ${response.statusText}`);
+                         const errorData = await response.json();
+                         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
                     }
                     const data = await response.json();
                     displayResults(data.results || []);
                 } catch (error) {
-                    console.error('Error en búsqueda:', error);
+                    console.error('Error in search:', error);
                     updateStatus('error', `${translations[currentLang].statusErrorSearch} ${error.message}`);
                 }
             }
-            
+
+
+            // --- EVENT LISTENERS ---
+            const setupEventListeners = () => {
+                dom.languageSelector.addEventListener('change', (e) => setLanguage(e.target.value));
+                dom.filterForm.addEventListener('submit', handleSearch);
+                dom.contentType.addEventListener('change', loadGenres);
+                dom.hiddenGemsPresetBtn.addEventListener('click', applyHiddenGemsPreset);
+                
+                // Listeners actualizados para los nuevos elementos de valor
+                ['startYear', 'endYear'].forEach(id => document.getElementById(id).addEventListener('input', updateRangeLabel(dom.yearRangeLabel, dom.startYear, dom.endYear, dom.startYearValue, dom.endYearValue)));
+                ['startRating', 'endRating'].forEach(id => document.getElementById(id).addEventListener('input', updateRangeLabel(dom.ratingRangeLabel, dom.startRating, dom.endRating, dom.startRatingValue, dom.endRatingValue, 1)));
+                ['startVoteCount', 'endVoteCount'].forEach(id => document.getElementById(id).addEventListener('input', updateRangeLabel(dom.voteCountRangeLabel, dom.startVoteCount, dom.endVoteCount, dom.startVoteCountValue, dom.endVoteCountValue)));
+                
+                // Nuevo: listener para actualizar el color de los sliders
+                document.querySelectorAll('.range-slider').forEach(slider => {
+                    slider.addEventListener('input', () => updateSliderTrack(slider));
+                });
+            };
+
             // --- UI & DISPLAY ---
-            const updateRangeLabel = (labelElem, startElem, endElem, decimals = 0) => () => {
+            const updateSliderTrack = (slider) => {
+                const min = slider.min || 0;
+                const max = slider.max || 100;
+                const value = slider.value;
+                const percent = ((value - min) / (max - min)) * 100;
+                const color = '#8b5cf6'; // Color del progreso
+                const trackColor = '#374151'; // Color del fondo de la barra
+                slider.style.background = `linear-gradient(to right, ${color} ${percent}%, ${trackColor} ${percent}%)`;
+            };
+            
+            // Función de etiqueta actualizada para manejar los valores individuales
+            const updateRangeLabel = (labelElem, startElem, endElem, startValueElem, endValueElem, decimals = 0) => () => {
                 let start = parseFloat(startElem.value);
                 let end = parseFloat(endElem.value);
                 if (start > end) {
+                    // Si el slider de inicio supera al de fin, se intercambian para no cruzarse
                     [start, end] = [end, start];
                     startElem.value = start;
                     endElem.value = end;
+                    updateSliderTrack(startElem);
+                    updateSliderTrack(endElem);
                 }
                 labelElem.textContent = `${start.toFixed(decimals)} - ${end.toFixed(decimals)}`;
+                startValueElem.textContent = start.toFixed(decimals);
+                endValueElem.textContent = end.toFixed(decimals);
             };
             
             const updateStatus = (type, message = '', subMessage = '') => {
@@ -514,24 +606,30 @@
                 dom.endRating.value = 10;
                 dom.startVoteCount.value = 50;
                 dom.endVoteCount.value = 1500;
-                
-                updateRangeLabel(dom.ratingRangeLabel, dom.startRating, dom.endRating, 1)();
-                updateRangeLabel(dom.voteCountRangeLabel, dom.startVoteCount, dom.endVoteCount)();
+                                
+                updateRangeLabel(dom.ratingRangeLabel, dom.startRating, dom.endRating, dom.startRatingValue, dom.endRatingValue, 1)();
+                updateRangeLabel(dom.voteCountRangeLabel, dom.startVoteCount, dom.endVoteCount, dom.startVoteCountValue, dom.endVoteCountValue)();
                 
                 handleSearch();
             };
 
             // --- INITIALIZATION ---
-            const initLang = getInitialLanguage();
-            dom.languageSelector.value = initLang;
-            setLanguage(initLang);
-            setupEventListeners();
-            updateRangeLabel(dom.yearRangeLabel, dom.startYear, dom.endYear)();
-            updateRangeLabel(dom.ratingRangeLabel, dom.startRating, dom.endRating, 1)();
-            updateRangeLabel(dom.voteCountRangeLabel, dom.startVoteCount, dom.endVoteCount)();
+            const init = () => {
+                const initLang = getInitialLanguage();
+                dom.languageSelector.value = initLang;
+                setLanguage(initLang);
+                setupEventListeners();
+                updateRangeLabel(dom.yearRangeLabel, dom.startYear, dom.endYear, dom.startYearValue, dom.endYearValue)();
+                updateRangeLabel(dom.ratingRangeLabel, dom.startRating, dom.endRating, dom.startRatingValue, dom.endRatingValue, 1)();
+                updateRangeLabel(dom.voteCountRangeLabel, dom.startVoteCount, dom.endVoteCount, dom.startVoteCountValue, dom.endVoteCountValue)();
+
+                // Nuevo: actualizar el color inicial de los sliders
+                document.querySelectorAll('.range-slider').forEach(slider => updateSliderTrack(slider));
+            };
+
+            init();
         });
     </script>
 </body>
 </html>
-
 
