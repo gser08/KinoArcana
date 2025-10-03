@@ -1,35 +1,73 @@
-// api/discover.js
-// Esta función se encarga de las búsquedas principales.
+import { URLSearchParams } from 'url';
 
 export default async function handler(request, response) {
-  const apiKey = process.env.TMDB_API_KEY;
-  if (!apiKey) {
-    return response.status(500).json({ error: 'La API key no está configurada en el servidor.' });
-  }
+    // 1. Desestructura todos los posibles parámetros de la consulta
+    const {
+        contentType,
+        sortBy,
+        genre,
+        originalLanguage,
+        startYear,
+        endYear,
+        startRating,
+        endRating,
+        startVoteCount,
+        endVoteCount,
+        language
+    } = request.query;
 
-  const frontendParams = request.query;
-  const contentType = frontendParams.contentType || 'movie';
-  delete frontendParams.contentType; 
+    const API_KEY = process.env.TMDB_API_KEY;
 
-  const params = new URLSearchParams({
-    api_key: apiKey,
-    ...frontendParams,
-  });
-
-  const tmdbUrl = `https://api.themoviedb.org/3/discover/${contentType}?${params}`;
-
-  try {
-    const tmdbResponse = await fetch(tmdbUrl);
-    if (!tmdbResponse.ok) {
-      const errorData = await tmdbResponse.json();
-      return response.status(tmdbResponse.status).json(errorData);
+    // 2. Verifica que la clave de API esencial esté configurada
+    if (!API_KEY) {
+        return response.status(500).json({ error: 'TMDB_API_KEY no está configurada en el servidor.' });
     }
-    const data = await tmdbResponse.json();
-    response.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
-    return response.status(200).json(data);
-  } catch (error) {
-    console.error(error);
-    return response.status(500).json({ error: 'Ocurrió un error interno en el servidor.' });
-  }
+
+    const API_BASE_URL = 'https://api.themoviedb.org/3';
+    
+    // 3. Inicializa URLSearchParams con los parámetros obligatorios
+    const params = new URLSearchParams({
+        api_key: API_KEY,
+        language: language || 'es-ES',
+        sort_by: sortBy || 'popularity.desc',
+        include_adult: false,
+    });
+    
+    // 4. Añade condicionalmente los filtros opcionales SOLO si existen
+    // ¡Esta es la corrección crucial! Evitamos enviar parámetros con valores 'undefined'.
+    if (genre) params.append('with_genres', genre);
+    if (originalLanguage) params.append('with_original_language', originalLanguage);
+
+    // Filtros de fecha
+    const dateParamPrefix = contentType === 'movie' ? 'primary_release_date' : 'first_air_date';
+    if (startYear) params.append(`${dateParamPrefix}.gte`, `${startYear}-01-01`);
+    if (endYear) params.append(`${dateParamPrefix}.lte`, `${endYear}-12-31`);
+
+    // Filtros de puntuación
+    if (startRating) params.append('vote_average.gte', startRating);
+    if (endRating) params.append('vote_average.lte', endRating);
+
+    // Filtros de cantidad de votos
+    if (startVoteCount) params.append('vote_count.gte', startVoteCount);
+    if (endVoteCount) params.append('vote_count.lte', endVoteCount);
+
+    // 5. Realiza la llamada fetch y maneja la respuesta
+    try {
+        const tmdbResponse = await fetch(`${API_BASE_URL}/discover/${contentType}?${params}`);
+        
+        if (!tmdbResponse.ok) {
+            // Proporciona un registro de errores más detallado para la depuración
+            const errorBody = await tmdbResponse.text();
+            console.error('Error de la API de TMDB:', errorBody);
+            return response.status(tmdbResponse.status).json({ error: `La solicitud a la API de TMDB falló: ${errorBody}` });
+        }
+
+        const data = await tmdbResponse.json();
+        return response.status(200).json(data);
+
+    } catch (error) {
+        console.error('Error de fetch en el lado del servidor:', error);
+        return response.status(500).json({ error: error.message });
+    }
 }
 
