@@ -15,11 +15,16 @@
                 extend: {
                     animation: {
                         'fade-in': 'fadeIn 0.5s ease-in-out',
-                        'slide-up': 'slideUp 0.3s ease-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'pop-in': 'popIn 0.3s ease-out forwards',
                     },
                     keyframes: {
                         fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-                        slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }
+                        slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
+                        popIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.9)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
+                        }
                     }
                 }
             }
@@ -31,52 +36,56 @@
         .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .card-hover:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2); }
         
-        /* --- Estilos de Slider Actualizados --- */
-        .range-slider {
-            -webkit-appearance: none;
-            appearance: none;
-            background: transparent; /* El fondo ahora se aplica con JavaScript */
-            cursor: pointer;
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
+        .range-slider { 
+            -webkit-appearance: none; 
+            appearance: none; 
+            background: #4b5563; /* Color de la barra vacía */
+            cursor: pointer; 
+            width: 100%; 
+            height: 6px; 
+            border-radius: 3px; 
             outline: none;
+            position: relative;
         }
-        .range-slider::-webkit-slider-track {
-            background: transparent;
-            border: transparent;
+        .range-slider::-webkit-slider-thumb { 
+            -webkit-appearance: none; 
+            appearance: none; 
+            background: #a78bfa; 
+            border: 2px solid #8b5cf6; 
+            height: 20px; 
+            width: 20px; 
+            border-radius: 50%; 
+            margin-top: -7px; 
         }
-        .range-slider::-moz-range-track {
-            background: transparent;
-            border: transparent;
-        }
-        .range-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            background: #a78bfa; /* Morado más claro para contraste */
-            border: 2px solid #8b5cf6;
-            height: 20px;
-            width: 20px;
-            border-radius: 50%;
-            margin-top: -7px;
-        }
-        .range-slider::-moz-range-thumb {
-            background: #a78bfa;
-            border: 2px solid #8b5cf6;
-            height: 20px;
-            width: 20px;
-            border-radius: 50%;
+        .range-slider::-moz-range-thumb { 
+            background: #a78bfa; 
+            border: 2px solid #8b5cf6; 
+            height: 20px; 
+            width: 20px; 
+            border-radius: 50%; 
         }
 
         .tooltip { position: relative; display: inline-block; }
         .tooltip .tooltiptext { visibility: hidden; width: 220px; background-color: #1f2937; color: #fff; text-align: center; border-radius: 6px; padding: 8px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -110px; opacity: 0; transition: opacity 0.3s; font-size: 0.75rem; border: 1px solid #4b5563; }
         .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        #quizModal { backdrop-filter: blur(10px); background-color: rgba(17, 24, 39, 0.8); }
+        .answer-card { transition: all 0.2s ease-in-out; }
+        .answer-card:hover { transform: scale(1.05); background-color: #4c1d95; }
+        .answer-card.selected { background-color: #6d28d9; border-color: #a78bfa; }
     </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen font-sans">
+<body class="bg-gray-900 text-white min-h-screen font-sans overflow-x-hidden">
 
-    <!-- Selector de Idioma -->
+    <div id="quizModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden animate-fade-in">
+        <div id="quizContainer" class="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-2xl w-full p-8 space-y-6 animate-slide-up"></div>
+        <div id="quizResultContainer" class="max-w-4xl w-full hidden"></div>
+         <button id="closeQuizBtn" class="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors">
+            <i class="fa-solid fa-xmark fa-2x"></i>
+        </button>
+    </div>
+
     <div class="absolute top-4 right-4 z-10">
         <select id="languageSelector" class="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5">
             <option value="es">Español</option>
@@ -87,19 +96,16 @@
         </select>
     </div>
 
-    <!-- Contenido Principal -->
-    <div class="container mx-auto px-4 py-8 max-w-7xl">
+    <div id="mainContent" class="container mx-auto px-4 py-8 max-w-7xl">
         <header class="text-center mb-12 animate-fade-in pt-10">
             <h1 class="text-5xl md:text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500" data-lang-key="appTitle">KinoArcana</h1>
             <p class="text-xl text-gray-300 max-w-3xl mx-auto" data-lang-key="appSubtitle">Descubre las obras maestras que el algoritmo olvidó.</p>
         </header>
 
-        <!-- Panel de Filtros -->
         <section class="mb-12">
             <div class="bg-gray-800 rounded-xl p-6 shadow-xl border border-gray-700">
                 <form id="filterForm" class="space-y-6">
                     <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <!-- Basic Filters -->
                         <div>
                             <label for="contentType" class="block text-sm font-medium mb-2 text-gray-300" data-lang-key="filterType">Tipo</label>
                             <select id="contentType" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 transition-all">
@@ -131,8 +137,8 @@
                             <input type="text" id="language" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 transition-all" placeholder="Ej: ja, ko, es...">
                         </div>
                     </div>
-                    <div class="border-t border-gray-700 pt-6 space-y-8"> <!-- Aumentado el espacio para mayor claridad -->
-                         <!-- Rango de Años - NUEVA ESTRUCTURA -->
+                    
+                    <div class="border-t border-gray-700 pt-6 space-y-8">
                         <div>
                             <label class="block text-sm font-medium mb-3 text-gray-300"><span data-lang-key="filterYear">Año de Lanzamiento</span>: <span id="yearRangeLabel" class="text-purple-400 font-bold">1980 - 2025</span></label>
                             <div class="flex items-center gap-4">
@@ -147,7 +153,6 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- Rango de Puntuación - NUEVA ESTRUCTURA -->
                         <div>
                             <label class="block text-sm font-medium mb-3 text-gray-300"><span data-lang-key="filterRating">Puntuación</span>: <span id="ratingRangeLabel" class="text-purple-400 font-bold">7.0 - 10</span></label>
                             <div class="flex items-center gap-4">
@@ -162,7 +167,6 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- Rango de Votos - NUEVA ESTRUCTURA -->
                         <div>
                             <label class="block text-sm font-medium mb-3 text-gray-300">
                                 <span data-lang-key="filterVoteCount">Cantidad de Votos</span>
@@ -184,8 +188,11 @@
                     </div>
 
                     <div class="flex flex-col md:flex-row items-center justify-center gap-4 pt-4">
+                        <button type="button" id="magicQuizBtn" class="w-full md:w-auto bg-gradient-to-r from-teal-400 to-blue-500 hover:opacity-90 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> <span data-lang-key="btnMagicQuiz">Guía Mágica</span>
+                        </button>
                         <button type="button" id="hiddenGemsPreset" class="w-full md:w-auto bg-gradient-to-r from-yellow-500 to-orange-500 hover:opacity-90 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> <span data-lang-key="btnFindGems">Encontrar Joyas Ocultas</span>
+                            <i class="fa-solid fa-star"></i> <span data-lang-key="btnFindGems">Joyas Ocultas</span>
                         </button>
                         <button type="submit" class="w-full md:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
                             <i class="fa-solid fa-search"></i> <span data-lang-key="btnSearch">Buscar</span>
@@ -203,427 +210,116 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- CONSTANTS ---
+            // --- CONSTANTS & DICTIONARY ---
             const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
-
-            // --- DICTIONARY FOR TRANSLATIONS ---
             const translations = {
-                es: {
-                    docTitle: "KinoArcana: Buscador de Joyas del Cine",
-                    appTitle: "KinoArcana",
-                    appSubtitle: "Descubre las obras maestras que el algoritmo olvidó.",
-                    filterType: "Tipo",
-                    filterTypeMovie: "🎥 Películas",
-                    filterTypeTV: "📺 Series de TV",
-                    filterGenre: "Género",
-                    filterGenreAll: "Todos",
-                    filterSortBy: "Ordenar Por",
-                    filterSortPopularity: "Popularidad",
-                    filterSortRating: "Mejor Puntuación",
-                    filterSortNewest: "Más Recientes",
-                    filterSortRevenue: "Mayores Ingresos",
-                    filterSortVotes: "Más Votadas",
-                    filterLanguage: "Idioma Original",
-                    filterLanguageTooltip: "Usa códigos ISO 639-1. Ej: 'ja' para japonés, 'es' para español, 'ko' para coreano.",
-                    filterYear: "Año de Lanzamiento",
-                    filterRating: "Puntuación",
-                    filterVoteCount: "Cantidad de Votos",
-                    filterVoteCountTooltip: "Usa un rango bajo para encontrar joyas ocultas, o un rango alto para encontrar clásicos aclamados.",
-                    btnFindGems: "Encontrar Joyas Ocultas",
-                    btnSearch: "Buscar",
-                    statusLoading: "Buscando el mejor contenido...",
-                    statusNoResults: "No se encontraron resultados",
-                    statusNoResultsSub: "Prueba con filtros más amplios.",
-                    statusError: "Ocurrió un error",
-                    statusErrorVercel: "Esta aplicación es avanzada y debe publicarse en un servidor para funcionar. ¡Sigue la guía de Vercel para ponerla en línea gratis!",
-                    statusErrorGenres: "No se pudieron cargar los géneros. Asegúrate de que el backend está funcionando y la API Key es correcta.",
-                    statusErrorSearch: "Error al realizar la búsqueda:",
-                    cardVotes: "votos"
-                },
-                en: {
-                    docTitle: "KinoArcana: Hidden Gems Finder",
-                    appTitle: "KinoArcana",
-                    appSubtitle: "Discover the masterpieces the algorithm forgot.",
-                    filterType: "Type",
-                    filterTypeMovie: "🎥 Movies",
-                    filterTypeTV: "📺 TV Series",
-                    filterGenre: "Genre",
-                    filterGenreAll: "All",
-                    filterSortBy: "Sort By",
-                    filterSortPopularity: "Popularity",
-                    filterSortRating: "Top Rated",
-                    filterSortNewest: "Newest",
-                    filterSortRevenue: "Highest Revenue",
-                    filterSortVotes: "Most Voted",
-                    filterLanguage: "Original Language",
-                    filterLanguageTooltip: "Use ISO 639-1 codes. E.g., 'ja' for Japanese, 'en' for English, 'ko' for Korean.",
-                    filterYear: "Release Year",
-                    filterRating: "Rating",
-                    filterVoteCount: "Vote Count",
-                    filterVoteCountTooltip: "Use a low range to find hidden gems, or a high range to find acclaimed classics.",
-                    btnFindGems: "Find Hidden Gems",
-                    btnSearch: "Search",
-                    statusLoading: "Searching for the best content...",
-                    statusNoResults: "No results found",
-                    statusNoResultsSub: "Try using broader filters.",
-                    statusError: "An error occurred",
-                    statusErrorVercel: "This is an advanced application and must be deployed to a server to work. Follow the Vercel guide to get it online for free!",
-                    statusErrorGenres: "Could not load genres. Make sure the backend is running and the API Key is correct.",
-                    statusErrorSearch: "Error during search:",
-                    cardVotes: "votes"
-                },
-                fr: {
-                    docTitle: "KinoArcana: Chercheur de Pépites",
-                    appTitle: "KinoArcana",
-                    appSubtitle: "Découvrez les chefs-d'œuvre que l'algorithme a oubliés.",
-                    filterType: "Type",
-                    filterTypeMovie: "🎥 Films",
-                    filterTypeTV: "📺 Séries TV",
-                    filterGenre: "Genre",
-                    filterGenreAll: "Tous",
-                    filterSortBy: "Trier par",
-                    filterSortPopularity: "Popularité",
-                    filterSortRating: "Mieux notés",
-                    filterSortNewest: "Plus récents",
-                    filterSortRevenue: "Revenus les plus élevés",
-                    filterSortVotes: "Plus votés",
-                    filterLanguage: "Langue originale",
-                    filterLanguageTooltip: "Utilisez les codes ISO 639-1. Ex: 'ja' pour japonais, 'fr' pour français, 'ko' pour coréen.",
-                    filterYear: "Année de sortie",
-                    filterRating: "Note",
-                    filterVoteCount: "Nombre de votes",
-                    filterVoteCountTooltip: "Utilisez une plage basse pour trouver des pépites, ou une plage élevée pour les classiques.",
-                    btnFindGems: "Trouver des Pépites",
-                    btnSearch: "Rechercher",
-                    statusLoading: "Recherche du meilleur contenu...",
-                    statusNoResults: "Aucun résultat trouvé",
-                    statusNoResultsSub: "Essayez avec des filtres plus larges.",
-                    statusError: "Une erreur est survenue",
-                    statusErrorVercel: "Cette application avancée doit être déployée sur un serveur. Suivez le guide Vercel pour la mettre en ligne gratuitement !",
-                    statusErrorGenres: "Impossible de charger les genres. Vérifiez que le backend fonctionne et que la clé API est correcte.",
-                    statusErrorSearch: "Erreur lors de la recherche :",
-                    cardVotes: "votes"
-                },
-                de: {
-                    docTitle: "KinoArcana: Finder für verborgene Schätze",
-                    appTitle: "KinoArcana",
-                    appSubtitle: "Entdecke die Meisterwerke, die der Algorithmus vergessen hat.",
-                    filterType: "Typ",
-                    filterTypeMovie: "🎥 Filme",
-                    filterTypeTV: "📺 Fernsehserien",
-                    filterGenre: "Genre",
-                    filterGenreAll: "Alle",
-                    filterSortBy: "Sortieren nach",
-                    filterSortPopularity: "Popularität",
-                    filterSortRating: "Bestbewertet",
-                    filterSortNewest: "Neueste",
-                    filterSortRevenue: "Höchster Umsatz",
-                    filterSortVotes: "Meistbewertet",
-                    filterLanguage: "Originalsprache",
-                    filterLanguageTooltip: "Verwenden Sie ISO 639-1-Codes. Z.B. 'ja' für Japanisch, 'de' für Deutsch, 'ko' für Koreanisch.",
-                    filterYear: "Veröffentlichungsjahr",
-                    filterRating: "Bewertung",
-                    filterVoteCount: "Anzahl der Stimmen",
-                    filterVoteCountTooltip: "Verwenden Sie einen niedrigen Bereich für verborgene Schätze oder einen hohen Bereich für Klassiker.",
-                    btnFindGems: "Schätze finden",
-                    btnSearch: "Suchen",
-                    statusLoading: "Suche nach den besten Inhalten...",
-                    statusNoResults: "Keine Ergebnisse gefunden",
-                    statusNoResultsSub: "Versuchen Sie es mit breiteren Filtern.",
-                    statusError: "Ein Fehler ist aufgetreten",
-                    statusErrorVercel: "Diese Anwendung muss auf einem Server bereitgestellt werden. Folgen Sie der Vercel-Anleitung, um sie kostenlos online zu stellen!",
-                    statusErrorGenres: "Genres konnten nicht geladen werden. Stellen Sie sicher, dass das Backend läuft und der API-Schlüssel korrekt ist.",
-                    statusErrorSearch: "Fehler bei der Suche:",
-                    cardVotes: "Stimmen"
-                },
-                pt: {
-                    docTitle: "KinoArcana: Caçador de Joias Escondidas",
-                    appTitle: "KinoArcana",
-                    appSubtitle: "Descubra as obras-primas que o algoritmo esqueceu.",
-                    filterType: "Tipo",
-                    filterTypeMovie: "🎥 Filmes",
-                    filterTypeTV: "📺 Séries de TV",
-                    filterGenre: "Gênero",
-                    filterGenreAll: "Todos",
-                    filterSortBy: "Ordenar por",
-                    filterSortPopularity: "Popularidade",
-                    filterSortRating: "Mais bem avaliados",
-                    filterSortNewest: "Mais recentes",
-                    filterSortRevenue: "Maior receita",
-                    filterSortVotes: "Mais votados",
-                    filterLanguage: "Idioma original",
-                    filterLanguageTooltip: "Use códigos ISO 639-1. Ex: 'ja' para japonês, 'pt' para português, 'ko' para coreano.",
-                    filterYear: "Ano de lançamento",
-                    filterRating: "Avaliação",
-                    filterVoteCount: "Contagem de votos",
-                    filterVoteCountTooltip: "Use um intervalo baixo para encontrar joias escondidas ou um intervalo alto para clássicos.",
-                    btnFindGems: "Encontrar Joias",
-                    btnSearch: "Pesquisar",
-                    statusLoading: "Procurando o melhor conteúdo...",
-                    statusNoResults: "Nenhum resultado encontrado",
-                    statusNoResultsSub: "Tente usar filtros mais amplos.",
-                    statusError: "Ocorreu um erro",
-                    statusErrorVercel: "Esta aplicação avançada deve ser implantada em um servidor. Siga o guia Vercel para colocá-la online de graça!",
-                    statusErrorGenres: "Não foi possível carregar os gêneros. Certifique-se de que o backend está funcionando e a chave da API está correta.",
-                    statusErrorSearch: "Erro durante a pesquisa:",
-                    cardVotes: "votos"
-                }
+                es: { docTitle: "KinoArcana: Buscador de Joyas del Cine", appTitle: "KinoArcana", appSubtitle: "Descubre las obras maestras que el algoritmo olvidó.", filterType: "Tipo", filterTypeMovie: "🎥 Películas", filterTypeTV: "📺 Series de TV", filterGenre: "Género", filterGenreAll: "Todos", filterSortBy: "Ordenar Por", filterSortPopularity: "Popularidad", filterSortRating: "Mejor Puntuación", filterSortNewest: "Más Recientes", filterSortRevenue: "Mayores Ingresos", filterSortVotes: "Más Votadas", filterLanguage: "Idioma Original", filterLanguageTooltip: "Usa códigos ISO 639-1. Ej: 'ja' para japonés, 'es' para español, 'ko' para coreano.", filterYear: "Año de Lanzamiento", filterRating: "Puntuación", filterVoteCount: "Cantidad de Votos", filterVoteCountTooltip: "Usa un rango bajo para encontrar joyas ocultas, o un rango alto para encontrar clásicos aclamados.", btnMagicQuiz: "Guía Mágica", btnFindGems: "Joyas Ocultas", btnSearch: "Buscar", statusLoading: "Buscando el mejor contenido...", statusNoResults: "No se encontraron resultados", statusNoResultsSub: "Prueba con filtros más amplios.", statusError: "Ocurrió un error", statusErrorVercel: "Esta aplicación es avanzada y debe publicarse en un servidor para funcionar. ¡Sigue la guía de Vercel para ponerla en línea gratis!", statusErrorGenres: "No se pudieron cargar los géneros. Asegúrate de que el backend está funcionando y la API Key es correcta.", statusErrorSearch: "Error al realizar la búsqueda:", cardVotes: "votos", quizStep: "Paso {current} de {total}", quizSearching: "Buscando la joya perfecta para ti...", quizNoResult: "¡Vaya! No encontramos una joya.", quizNoResultSub: "A veces, los tesoros más raros son difíciles de encontrar. ¡Inténtalo de nuevo!", quizRetry: "Intentar de Nuevo", resultTitle: "Tu recomendación mágica es...", noOverviewText: "No hay una descripción disponible en este idioma." },
+                en: { docTitle: "KinoArcana: Hidden Gems Finder", appTitle: "KinoArcana", appSubtitle: "Discover the masterpieces the algorithm forgot.", filterType: "Type", filterTypeMovie: "🎥 Movies", filterTypeTV: "📺 TV Series", filterGenre: "Genre", filterGenreAll: "All", filterSortBy: "Sort By", filterSortPopularity: "Popularity", filterSortRating: "Top Rated", filterSortNewest: "Newest", filterSortRevenue: "Highest Revenue", filterSortVotes: "Most Voted", filterLanguage: "Original Language", filterLanguageTooltip: "Use ISO 639-1 codes. E.g., 'ja' for Japanese, 'en' for English, 'ko' for Korean.", filterYear: "Release Year", filterRating: "Rating", filterVoteCount: "Vote Count", filterVoteCountTooltip: "Use a low range to find hidden gems, or a high range to find acclaimed classics.", btnMagicQuiz: "Magic Guide", btnFindGems: "Hidden Gems", btnSearch: "Search", statusLoading: "Searching for the best content...", statusNoResults: "No results found", statusNoResultsSub: "Try using broader filters.", statusError: "An error occurred", statusErrorVercel: "This is an advanced application and must be deployed to a server to work. Follow the Vercel guide to get it online for free!", statusErrorGenres: "Could not load genres. Make sure the backend is running and the API Key is correct.", statusErrorSearch: "Error during search:", cardVotes: "votes", quizStep: "Step {current} of {total}", quizSearching: "Searching for the perfect gem for you...", quizNoResult: "Oops! We couldn't find a gem.", quizNoResultSub: "Sometimes, the rarest treasures are hard to find. Please try again!", quizRetry: "Try Again", resultTitle: "Your magic recommendation is...", noOverviewText: "No overview is available in this language." },
+                fr: { docTitle: "KinoArcana: Chercheur de Pépites", appTitle: "KinoArcana", appSubtitle: "Découvrez les chefs-d'œuvre que l'algorithme a oubliés.", filterType: "Type", filterTypeMovie: "🎥 Films", filterTypeTV: "📺 Séries TV", filterGenre: "Genre", filterGenreAll: "Tous", filterSortBy: "Trier par", filterSortPopularity: "Popularité", filterSortRating: "Mieux notés", filterSortNewest: "Plus récents", filterSortRevenue: "Revenus les plus élevés", filterSortVotes: "Plus votés", filterLanguage: "Langue originale", filterLanguageTooltip: "Utilisez les codes ISO 639-1. Ex: 'ja' pour japonais, 'fr' pour français, 'ko' pour coréen.", filterYear: "Année de sortie", filterRating: "Note", filterVoteCount: "Nombre de votes", filterVoteCountTooltip: "Utilisez une plage basse pour trouver des pépites, ou une plage élevée pour les classiques.", btnMagicQuiz: "Guide Magique", btnFindGems: "Pépites Cachées", btnSearch: "Rechercher", statusLoading: "Recherche du meilleur contenu...", statusNoResults: "Aucun résultat trouvé", statusNoResultsSub: "Essayez avec des filtres plus larges.", statusError: "Une erreur est survenue", statusErrorVercel: "Cette application avancée doit être déployée sur un serveur. Suivez le guide Vercel pour la mettre en ligne gratuitement !", statusErrorGenres: "Impossible de charger les genres. Vérifiez que le backend fonctionne et que la clé API est correcte.", statusErrorSearch: "Erreur lors de la recherche :", cardVotes: "votes", quizStep: "Étape {current} sur {total}", quizSearching: "Recherche de la perle rare pour vous...", quizNoResult: "Oups! Nous n'avons pas trouvé de pépite.", quizNoResultSub: "Parfois, les trésors les plus rares sont difficiles à trouver. Réessayez !", quizRetry: "Réessayer", resultTitle: "Votre recommandation magique est...", noOverviewText: "Aucune description n'est disponible dans cette langue." },
+                de: { docTitle: "KinoArcana: Finder für verborgene Schätze", appTitle: "KinoArcana", appSubtitle: "Entdecke die Meisterwerke, die der Algorithmus vergessen hat.", filterType: "Typ", filterTypeMovie: "🎥 Filme", filterTypeTV: "📺 Fernsehserien", filterGenre: "Genre", filterGenreAll: "Alle", filterSortBy: "Sortieren nach", filterSortPopularity: "Popularität", filterSortRating: "Bestbewertet", filterSortNewest: "Neueste", filterSortRevenue: "Höchster Umsatz", filterSortVotes: "Meistbewertet", filterLanguage: "Originalsprache", filterLanguageTooltip: "Verwenden Sie ISO 639-1-Codes. Z.B. 'ja' für Japanisch, 'de' für Deutsch, 'ko' für Koreanisch.", filterYear: "Veröffentlichungsjahr", filterRating: "Bewertung", filterVoteCount: "Anzahl der Stimmen", filterVoteCountTooltip: "Verwenden Sie einen niedrigen Bereich für verborgene Schätze oder einen hohen Bereich für Klassiker.", btnMagicQuiz: "Magischer Führer", btnFindGems: "Verborgene Schätze", btnSearch: "Suchen", statusLoading: "Suche nach den besten Inhalten...", statusNoResults: "Keine Ergebnisse gefunden", statusNoResultsSub: "Versuchen Sie es mit breiteren Filtern.", statusError: "Ein Fehler ist aufgetreten", statusErrorVercel: "Diese Anwendung muss auf einem Server bereitgestellt werden. Folgen Sie der Vercel-Anleitung, um sie kostenlos online zu stellen!", statusErrorGenres: "Genres konnten nicht geladen werden. Stellen Sie sicher, dass das Backend läuft und der API-Schlüssel korrekt ist.", statusErrorSearch: "Fehler bei der Suche:", cardVotes: "Stimmen", quizStep: "Schritt {current} von {total}", quizSearching: "Suche nach dem perfekten Juwel für dich...", quizNoResult: "Hoppla! Wir konnten keinen Schatz finden.", quizNoResultSub: "Manchmal sind die seltensten Schätze schwer zu finden. Bitte versuch es erneut!", quizRetry: "Erneut versuchen", resultTitle: "Deine magische Empfehlung lautet...", noOverviewText: "In dieser Sprache ist keine Übersicht verfügbar." },
+                pt: { docTitle: "KinoArcana: Caçador de Joias Escondidas", appTitle: "KinoArcana", appSubtitle: "Descubra as obras-primas que o algoritmo esqueceu.", filterType: "Tipo", filterTypeMovie: "🎥 Filmes", filterTypeTV: "📺 Séries de TV", filterGenre: "Gênero", filterGenreAll: "Todos", filterSortBy: "Ordenar por", filterSortPopularity: "Popularidade", filterSortRating: "Mais bem avaliados", filterSortNewest: "Mais recentes", filterSortRevenue: "Maior receita", filterSortVotes: "Mais votados", filterLanguage: "Idioma original", filterLanguageTooltip: "Use códigos ISO 639-1. Ex: 'ja' para japonês, 'pt' para português, 'ko' para coreano.", filterYear: "Ano de lançamento", filterRating: "Avaliação", filterVoteCount: "Contagem de votos", filterVoteCountTooltip: "Use um intervalo baixo para encontrar joias escondidas ou um intervalo alto para clássicos.", btnMagicQuiz: "Guia Mágico", btnFindGems: "Joias Escondidas", btnSearch: "Pesquisar", statusLoading: "Procurando o melhor conteúdo...", statusNoResults: "Nenhum resultado encontrado", statusNoResultsSub: "Tente usar filtros mais amplos.", statusError: "Ocorreu um erro", statusErrorVercel: "Esta aplicação avançada deve ser implantada em um servidor. Siga o guia Vercel para colocá-la online de graça!", statusErrorGenres: "Não foi possível carregar os gêneros. Certifique-se de que o backend está funcionando e a chave da API está correta.", statusErrorSearch: "Erro durante a pesquisa:", cardVotes: "votos", quizStep: "Passo {current} de {total}", quizSearching: "Procurando a joia perfeita para você...", quizNoResult: "Ops! Não conseguimos encontrar uma joia.", quizNoResultSub: "Às vezes, os tesouros mais raros são difíceis de encontrar. Por favor, tente novamente!", quizRetry: "Tentar Novamente", resultTitle: "Sua recomendação mágica é...", noOverviewText: "Nenhuma sinopse disponível neste idioma." }
             };
-            
+            const quizData = {
+                es: [ { stepText: "Paso {current} de {total}", question: "¿Qué tipo de historia te apetece hoy?", searchingText: "Buscando la joya perfecta para ti...", noResultText: "¡Vaya! No encontramos una joya.", noResultSubtext: "A veces, los tesoros más raros son difíciles de encontrar. ¡Inténtalo de nuevo!", retryText: "Intentar de Nuevo", resultTitle: "Tu recomendación mágica es...", noOverviewText: "No hay una descripción disponible en este idioma.", answers: [ { text: "Algo que me haga pensar", icon: "fa-brain", params: { with_genres: "99,18" } }, { text: "Una aventura épica", icon: "fa-dungeon", params: { with_genres: "12,14,878" } }, { text: "Risas y buen rollo", icon: "fa-face-laugh-beam", params: { with_genres: "35,10751" } }, { text: "Misterio y tensión", icon: "fa-user-secret", params: { with_genres: "9648,53,80" } } ] }, { stepText: "Paso {current} de {total}", question: "¿Prefieres una historia del mundo real o algo fantástico?", answers: [ { text: "Basado en la realidad", icon: "fa-landmark", params: { with_keywords: "9715" } }, { text: "Pura imaginación", icon: "fa-wand-magic-sparkles", params: { without_keywords: "9715" } } ] }, { stepText: "Paso {current} de {total}", question: "¿Te apetece un clásico o algo más moderno?", answers: [ { text: "Un clásico atemporal (antes del 2000)", icon: "fa-film", params: { 'primary_release_date.lte': '1999-12-31' } }, { text: "Algo fresco y nuevo (después del 2000)", icon: "fa-mobile-screen-button", params: { 'primary_release_date.gte': '2000-01-01' } } ] } ],
+            };
+            ['en', 'fr', 'de', 'pt'].forEach(lang => { quizData[lang] = quizData.es; });
             let currentLang = 'es';
 
-            // --- DOM ELEMENTS ---
-            const dom = {
-                html: document.documentElement,
-                docTitle: document.title,
-                languageSelector: document.getElementById('languageSelector'),
-                filterForm: document.getElementById('filterForm'),
-                contentType: document.getElementById('contentType'),
-                genre: document.getElementById('genre'),
-                sortBy: document.getElementById('sortBy'),
-                language: document.getElementById('language'),
-                startYear: document.getElementById('startYear'),
-                endYear: document.getElementById('endYear'),
-                yearRangeLabel: document.getElementById('yearRangeLabel'),
-                startRating: document.getElementById('startRating'),
-                endRating: document.getElementById('endRating'),
-                ratingRangeLabel: document.getElementById('ratingRangeLabel'),
-                startVoteCount: document.getElementById('startVoteCount'),
-                endVoteCount: document.getElementById('endVoteCount'),
-                voteCountRangeLabel: document.getElementById('voteCountRangeLabel'),
-                
-                // Elementos de valor individual añadidos
-                startYearValue: document.getElementById('startYearValue'),
-                endYearValue: document.getElementById('endYearValue'),
-                startRatingValue: document.getElementById('startRatingValue'),
-                endRatingValue: document.getElementById('endRatingValue'),
-                startVoteCountValue: document.getElementById('startVoteCountValue'),
-                endVoteCountValue: document.getElementById('endVoteCountValue'),
-
-                hiddenGemsPresetBtn: document.getElementById('hiddenGemsPreset'),
-                statusContainer: document.getElementById('statusContainer'),
-                resultsGrid: document.getElementById('resultsGrid'),
-            };
-
-            // --- LANGUAGE FUNCTIONS ---
-            const setLanguage = (lang) => {
-                if (!translations[lang]) return;
-                currentLang = lang;
-                dom.html.lang = lang;
-                document.title = translations[lang].docTitle;
-                localStorage.setItem('kinoarcana-lang', lang);
-                
-                document.querySelectorAll('[data-lang-key]').forEach(el => {
-                    const key = el.getAttribute('data-lang-key');
-                    if (translations[lang][key]) {
-                        el.textContent = translations[lang][key];
-                    }
-                });
-                // Reload genres in the new language
-                loadGenres();
-            };
-
-            const getInitialLanguage = () => {
-                const savedLang = localStorage.getItem('kinoarcana-lang');
-                if (savedLang && translations[savedLang]) {
-                    return savedLang;
-                }
-                const browserLang = navigator.language.split('-')[0];
-                return translations[browserLang] ? browserLang : 'en';
-            };
-
-            // --- API & DATA HANDLING ---
-            async function loadGenres() {
-                const type = dom.contentType.value;
-                try {
-                    // Check if running locally vs on Vercel
-                    if (window.location.protocol === 'file:' || !window.location.host) {
-                        // Don't try to fetch genres if not on a server
-                        if (dom.genre) dom.genre.innerHTML = `<option value="">${translations[currentLang].filterGenreAll}</option>`;
-                        return;
-                    }
-
-                    const response = await fetch(`/api/genres?contentType=${type}&language=${currentLang}`);
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    
-                    const data = await response.json();
-                    if (dom.genre) {
-                        dom.genre.innerHTML = `<option value="">${translations[currentLang].filterGenreAll}</option>`;
-                        if (data && data.genres) {
-                            data.genres.forEach(genre => {
-                                const option = document.createElement('option');
-                                option.value = genre.id;
-                                option.textContent = genre.name;
-                                dom.genre.appendChild(option);
-                            });
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error fetching genres:', error);
-                    updateStatus('error', translations[currentLang].statusErrorGenres);
-                }
-            }
+            const dom = { html: document.documentElement, languageSelector: document.getElementById('languageSelector'), filterForm: document.getElementById('filterForm'), contentType: document.getElementById('contentType'), genre: document.getElementById('genre'), sortBy: document.getElementById('sortBy'), language: document.getElementById('language'), startYear: document.getElementById('startYear'), endYear: document.getElementById('endYear'), yearRangeLabel: document.getElementById('yearRangeLabel'), startRating: document.getElementById('startRating'), endRating: document.getElementById('endRating'), ratingRangeLabel: document.getElementById('ratingRangeLabel'), startVoteCount: document.getElementById('startVoteCount'), endVoteCount: document.getElementById('endVoteCount'), voteCountRangeLabel: document.getElementById('voteCountRangeLabel'), startYearValue: document.getElementById('startYearValue'), endYearValue: document.getElementById('endYearValue'), startRatingValue: document.getElementById('startRatingValue'), endRatingValue: document.getElementById('endRatingValue'), startVoteCountValue: document.getElementById('startVoteCountValue'), endVoteCountValue: document.getElementById('endVoteCountValue'), hiddenGemsPresetBtn: document.getElementById('hiddenGemsPreset'), statusContainer: document.getElementById('statusContainer'), resultsGrid: document.getElementById('resultsGrid'), quizModal: document.getElementById('quizModal'), quizContainer: document.getElementById('quizContainer'), quizResultContainer: document.getElementById('quizResultContainer'), magicQuizBtn: document.getElementById('magicQuizBtn'), closeQuizBtn: document.getElementById('closeQuizBtn'), };
             
-            async function handleSearch(e) {
-                if (e) e.preventDefault();
-
-                // Check if the app is running on a local file or a non-server environment
-                if (window.location.protocol === 'file:' || !window.location.host) {
-                     updateStatus('error', translations[currentLang].statusErrorVercel);
-                     return;
+            // --- FIX START ---
+            // Helper function to detect if the app is running in a local/preview environment
+            const isDevEnvironment = () => !window.location.hostname.includes('vercel.app') && !window.location.hostname.includes('localhost');
+            // --- FIX END ---
+            
+            let quizCurrentStep = 0;
+            let quizSelectedParams = {};
+            const startQuiz = () => { quizCurrentStep = 0; quizSelectedParams = {}; dom.quizContainer.classList.remove('hidden'); dom.quizResultContainer.classList.add('hidden'); dom.quizModal.classList.remove('hidden'); document.body.style.overflow = 'hidden'; renderQuizStep(); };
+            const closeQuiz = () => { dom.quizModal.classList.add('hidden'); document.body.style.overflow = ''; };
+            const renderQuizStep = () => { const stepData = quizData[currentLang][quizCurrentStep]; let answersHtml = stepData.answers.map((answer, index) => ` <div class="answer-card bg-gray-700 border-2 border-transparent p-4 rounded-lg cursor-pointer flex items-center gap-4" data-answer-index="${index}"> <i class="fa-solid ${answer.icon} fa-2x w-8 text-center text-purple-300"></i> <span class="font-semibold">${answer.text}</span> </div> `).join(''); const stepText = translations[currentLang].quizStep .replace('{current}', quizCurrentStep + 1) .replace('{total}', quizData[currentLang].length); dom.quizContainer.innerHTML = ` <div class="text-center mb-2"> <span class="text-purple-400 font-semibold">${stepText}</span> </div> <h2 class="text-2xl font-bold text-center mb-6">${stepData.question}</h2> <div class="space-y-4">${answersHtml}</div> `; dom.quizContainer.querySelectorAll('.answer-card').forEach(card => { card.addEventListener('click', () => selectAnswer(card.dataset.answerIndex)); }); };
+            const selectAnswer = (index) => { const stepData = quizData[currentLang][quizCurrentStep]; const answer = stepData.answers[index]; Object.assign(quizSelectedParams, answer.params); quizCurrentStep++; if (quizCurrentStep < quizData[currentLang].length) { renderQuizStep(); } else { endQuiz(); } };
+            const endQuiz = async () => { 
+                // --- FIX START ---
+                if (isDevEnvironment()) {
+                    renderQuizResult(null, new Error("Dev environment"));
+                    return;
                 }
-
-                updateStatus('loading');
-                
-                const params = new URLSearchParams({
-                    contentType: dom.contentType.value,
-                    sortBy: dom.sortBy.value,
-                    startYear: dom.startYear.value,
-                    endYear: dom.endYear.value,
-                    startRating: dom.startRating.value,
-                    endRating: dom.endRating.value,
-                    startVoteCount: dom.startVoteCount.value,
-                    endVoteCount: dom.endVoteCount.value,
-                    language: currentLang
-                });
-
-                if (dom.genre.value) params.append('genre', dom.genre.value);
-                if (dom.language.value) params.append('originalLanguage', dom.language.value.trim());
-                
-                try {
-                    const response = await fetch(`/api/discover?${params}`);
-                    if (!response.ok) {
-                         const errorData = await response.json();
-                         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-                    }
-                    const data = await response.json();
-                    displayResults(data.results || []);
-                } catch (error) {
-                    console.error('Error in search:', error);
-                    updateStatus('error', `${translations[currentLang].statusErrorSearch} ${error.message}`);
+                // --- FIX END ---
+                dom.quizContainer.innerHTML = `<div class="text-center p-8"><div class="spinner mx-auto"></div><p class="mt-4 text-gray-300">${translations[currentLang].quizSearching}</p></div>`; const params = new URLSearchParams({ contentType: 'movie', sortBy: 'vote_average.desc', 'vote_count.gte': 100, 'vote_count.lte': 2500, ...quizSelectedParams, language: currentLang }); try { const response = await fetch(`/api/discover?${params}`); if (!response.ok) throw new Error('API response failed'); const data = await response.json(); const validResults = data.results.filter(r => r.poster_path && r.overview); const result = validResults.length > 0 ? validResults[Math.floor(Math.random() * Math.min(10, validResults.length))] : null; renderQuizResult(result); } catch (error) { renderQuizResult(null, error); } };
+            const renderQuizResult = (result, error = null) => { 
+                // --- FIX START ---
+                if (error && error.message === "Dev environment") {
+                    dom.quizResultContainer.innerHTML = `<div class="bg-gray-800 border border-gray-700 rounded-2xl p-8 text-center animate-pop-in"><div class="text-6xl mb-4">🚀</div><h3 class="text-2xl font-bold mb-2">${translations[currentLang].statusError}</h3><p class="text-gray-400 mb-6">${translations[currentLang].statusErrorVercel}</p><button id="retryQuizBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg"><i class="fa-solid fa-rotate-right"></i> ${translations[currentLang].quizRetry}</button></div>`;
+                    dom.quizContainer.classList.add('hidden');
+                    dom.quizResultContainer.classList.remove('hidden');
+                    dom.quizResultContainer.querySelector('#retryQuizBtn').addEventListener('click', startQuiz);
+                    return;
                 }
-            }
+                 // --- FIX END ---
+                const lang = translations[currentLang]; if (error || !result) { dom.quizResultContainer.innerHTML = ` <div class="bg-gray-800 border border-gray-700 rounded-2xl p-8 text-center animate-pop-in"> <div class="text-6xl mb-4">🤷</div> <h3 class="text-2xl font-bold mb-2">${lang.quizNoResult}</h3> <p class="text-gray-400 mb-6">${lang.quizNoResultSub}</p> <button id="retryQuizBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg"><i class="fa-solid fa-rotate-right"></i> ${lang.quizRetry}</button> </div>`; } else { const posterPath = `${IMAGE_BASE_URL}${result.poster_path}`; const year = (result.release_date || 'N/A').split('-')[0]; dom.quizResultContainer.innerHTML = ` <div class="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl w-full animate-pop-in grid md:grid-cols-3 gap-8 p-8"> <div class="md:col-span-1"><img src="${posterPath}" alt="${result.title}" class="rounded-lg shadow-xl w-full"></div> <div class="md:col-span-2 space-y-4"> <div> <span class="text-purple-400 font-semibold">${lang.resultTitle}</span> <h2 class="text-4xl font-bold">${result.title} (${year})</h2> </div> <div class="flex items-center gap-4 text-lg"> <span class="flex items-center gap-2"><i class="fa-solid fa-star text-yellow-400"></i> ${result.vote_average.toFixed(1)}</span> <span class="text-gray-400">|</span> <span class="flex items-center gap-2"><i class="fa-solid fa-users text-gray-400"></i> ${result.vote_count} ${lang.cardVotes}</span> </div> <p class="text-gray-300 line-clamp-6">${result.overview || lang.noOverviewText}</p> <div class="pt-4"><button id="retryQuizBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg"><i class="fa-solid fa-rotate-right"></i> ${lang.quizRetry}</button></div> </div> </div>`; } dom.quizContainer.classList.add('hidden'); dom.quizResultContainer.classList.remove('hidden'); dom.quizResultContainer.querySelector('#retryQuizBtn').addEventListener('click', startQuiz); };
+            
+            const getInitialLanguage = () => { const savedLang = localStorage.getItem('kinoArcanaLang'); return savedLang && translations[savedLang] ? savedLang : 'es'; };
+            const setLanguage = (lang) => { if (!translations[lang]) return; currentLang = lang; localStorage.setItem('kinoArcanaLang', lang); dom.html.lang = lang; document.title = translations[lang].docTitle; document.querySelectorAll('[data-lang-key]').forEach(el => { const key = el.dataset.langKey; if (translations[lang][key]) { el.textContent = translations[lang][key]; } }); loadGenres(); };
+            
+            async function loadGenres() { 
+                // --- FIX START ---
+                if (isDevEnvironment()) {
+                    return updateStatus('error');
+                }
+                // --- FIX END ---
+                try { const response = await fetch(`/api/genres?contentType=${dom.contentType.value}&language=${currentLang}`); if (!response.ok) throw new Error('API response failed'); const data = await response.json(); const lang = translations[currentLang]; dom.genre.innerHTML = `<option value="">${lang.filterGenreAll}</option>`; data.genres.forEach(genre => { dom.genre.innerHTML += `<option value="${genre.id}">${genre.name}</option>`; }); } catch(e) { console.error(e); updateStatus('error', translations[currentLang].statusErrorGenres); } }
+            
+            async function handleSearch(e) { 
+                e.preventDefault(); 
+                // --- FIX START ---
+                if (isDevEnvironment()) {
+                    return updateStatus('error');
+                }
+                // --- FIX END ---
+                dom.resultsGrid.innerHTML = ''; updateStatus('loading'); const params = new URLSearchParams({ contentType: dom.contentType.value, sortBy: dom.sortBy.value, genre: dom.genre.value, originalLanguage: dom.language.value.trim(), startYear: dom.startYear.value, endYear: dom.endYear.value, startRating: dom.startRating.value, endRating: dom.endRating.value, startVoteCount: dom.startVoteCount.value, endVoteCount: dom.endVoteCount.value, language: currentLang }); try { const response = await fetch(`/api/discover?${params}`); if (!response.ok) throw new Error(await response.text()); const data = await response.json(); displayResults(data.results); } catch (error) { console.error('Error during search:', error); updateStatus('error', `${translations[currentLang].statusErrorSearch} ${error.message}`); } }
+            
+            const updateSliderTrack = (slider) => { const min = slider.min; const max = slider.max; const val = slider.value; const percentage = ((val - min) / (max - min)) * 100; slider.style.background = `linear-gradient(to right, #8b5cf6 ${percentage}%, #4b5563 ${percentage}%)`; };
+            const updateRangeLabel = (labelElem, startElem, endElem, startValueElem, endValueElem, decimals = 0) => () => { let start = parseFloat(startElem.value); let end = parseFloat(endElem.value); if (start > end) { [start, end] = [end, start]; startElem.value = start; endElem.value = end; } labelElem.textContent = `${start.toFixed(decimals)} - ${end.toFixed(decimals)}`; startValueElem.textContent = start.toFixed(decimals); endValueElem.textContent = end.toFixed(decimals); };
+            
+            const updateStatus = (type, message = '') => { const lang = translations[currentLang]; let content = ''; switch (type) { case 'loading': content = `<div class="spinner mx-auto"></div><p class="mt-4 text-gray-300">${lang.statusLoading}</p>`; break; case 'no-results': content = `<div class="text-6xl mb-4">🤷</div><h3 class="text-xl font-semibold">${lang.statusNoResults}</h3><p class="text-gray-300">${lang.statusNoResultsSub}</p>`; break; case 'error': 
+                // --- FIX START ---
+                const isDev = isDevEnvironment();
+                // --- FIX END ---
+                const finalMessage = isDev ? lang.statusErrorVercel : message; content = `<div class="text-6xl mb-4">⚠️</div><h3 class="text-xl font-semibold">${lang.statusError}</h3><p class="text-gray-300">${finalMessage}</p>`; break; } dom.statusContainer.innerHTML = content; };
+            
+            const displayResults = (results) => { dom.statusContainer.innerHTML = ''; if (results.length === 0) return updateStatus('no-results'); results.forEach(item => { const card = createResultCard(item); dom.resultsGrid.appendChild(card); }); };
+            const createResultCard = (item) => { const card = document.createElement('div'); card.className = 'bg-gray-800 rounded-lg overflow-hidden shadow-lg card-hover animate-fade-in'; const title = item.title || item.name; const year = (item.release_date || item.first_air_date || 'N/A').split('-')[0]; const posterPath = item.poster_path ? `${IMAGE_BASE_URL}${item.poster_path}` : 'https://placehold.co/500x750/1f2937/4b5563?text=Sin+Imagen'; card.innerHTML = ` <div class="relative aspect-[2/3] bg-gray-700"> <img src="${posterPath}" alt="${title}" class="w-full h-full object-cover" loading="lazy"> <div class="absolute top-2 right-2 bg-black bg-opacity-70 px-2 py-1 rounded-full flex items-center text-xs"> <i class="fa-solid fa-star text-yellow-400 mr-1"></i> <span class="font-bold">${item.vote_average.toFixed(1)}</span> </div> </div> <div class="p-4"> <h3 class="font-semibold text-white mb-1 line-clamp-2">${title}</h3> <div class="text-gray-400 text-sm flex justify-between items-center"> <span>${year}</span> <span class="flex items-center" title="${item.vote_count} votos"> <i class="fa-solid fa-users mr-1"></i> ${item.vote_count} </span> </div> </div>`; return card; };
+            const applyHiddenGemsPreset = () => { dom.sortBy.value = 'vote_average.desc'; dom.startRating.value = 7.5; dom.endRating.value = 10; dom.startVoteCount.value = 50; dom.endVoteCount.value = 1500; dom.startYear.value = 1970; dom.endYear.value = 2020; document.querySelectorAll('.range-slider').forEach(slider => updateSliderTrack(slider)); updateRangeLabel(dom.ratingRangeLabel, dom.startRating, dom.endRating, dom.startRatingValue, dom.endRatingValue, 1)(); updateRangeLabel(dom.voteCountRangeLabel, dom.startVoteCount, dom.endVoteCount, dom.startVoteCountValue, dom.endVoteCountValue)(); updateRangeLabel(dom.yearRangeLabel, dom.startYear, dom.endYear, dom.startYearValue, dom.endYearValue)(); dom.filterForm.requestSubmit(); };
 
-
-            // --- EVENT LISTENERS ---
             const setupEventListeners = () => {
                 dom.languageSelector.addEventListener('change', (e) => setLanguage(e.target.value));
                 dom.filterForm.addEventListener('submit', handleSearch);
                 dom.contentType.addEventListener('change', loadGenres);
                 dom.hiddenGemsPresetBtn.addEventListener('click', applyHiddenGemsPreset);
                 
-                // Listeners actualizados para los nuevos elementos de valor
-                ['startYear', 'endYear'].forEach(id => document.getElementById(id).addEventListener('input', updateRangeLabel(dom.yearRangeLabel, dom.startYear, dom.endYear, dom.startYearValue, dom.endYearValue)));
-                ['startRating', 'endRating'].forEach(id => document.getElementById(id).addEventListener('input', updateRangeLabel(dom.ratingRangeLabel, dom.startRating, dom.endRating, dom.startRatingValue, dom.endRatingValue, 1)));
-                ['startVoteCount', 'endVoteCount'].forEach(id => document.getElementById(id).addEventListener('input', updateRangeLabel(dom.voteCountRangeLabel, dom.startVoteCount, dom.endVoteCount, dom.startVoteCountValue, dom.endVoteCountValue)));
-                
-                // Nuevo: listener para actualizar el color de los sliders
-                document.querySelectorAll('.range-slider').forEach(slider => {
-                    slider.addEventListener('input', () => updateSliderTrack(slider));
+                ['startYear', 'endYear', 'startRating', 'endRating', 'startVoteCount', 'endVoteCount'].forEach(id => {
+                    dom[id].addEventListener('input', () => {
+                        updateRangeLabel(dom.yearRangeLabel, dom.startYear, dom.endYear, dom.startYearValue, dom.endYearValue)();
+                        updateRangeLabel(dom.ratingRangeLabel, dom.startRating, dom.endRating, dom.startRatingValue, dom.endRatingValue, 1)();
+                        updateRangeLabel(dom.voteCountRangeLabel, dom.startVoteCount, dom.endVoteCount, dom.startVoteCountValue, dom.endVoteCountValue)();
+                    });
                 });
-            };
-
-            // --- UI & DISPLAY ---
-            const updateSliderTrack = (slider) => {
-                const min = slider.min || 0;
-                const max = slider.max || 100;
-                const value = slider.value;
-                const percent = ((value - min) / (max - min)) * 100;
-                const color = '#8b5cf6'; // Color del progreso
-                const trackColor = '#374151'; // Color del fondo de la barra
-                slider.style.background = `linear-gradient(to right, ${color} ${percent}%, ${trackColor} ${percent}%)`;
-            };
-            
-            // Función de etiqueta actualizada para manejar los valores individuales
-            const updateRangeLabel = (labelElem, startElem, endElem, startValueElem, endValueElem, decimals = 0) => () => {
-                let start = parseFloat(startElem.value);
-                let end = parseFloat(endElem.value);
-                if (start > end) {
-                    // Si el slider de inicio supera al de fin, se intercambian para no cruzarse
-                    [start, end] = [end, start];
-                    startElem.value = start;
-                    endElem.value = end;
-                    updateSliderTrack(startElem);
-                    updateSliderTrack(endElem);
-                }
-                labelElem.textContent = `${start.toFixed(decimals)} - ${end.toFixed(decimals)}`;
-                startValueElem.textContent = start.toFixed(decimals);
-                endValueElem.textContent = end.toFixed(decimals);
-            };
-            
-            const updateStatus = (type, message = '', subMessage = '') => {
-                dom.resultsGrid.innerHTML = '';
-                let content = '';
-                const lang = translations[currentLang];
-                switch (type) {
-                    case 'loading': content = `<div class="spinner mx-auto"></div><p class="mt-4 text-gray-300">${lang.statusLoading}</p>`; break;
-                    case 'no-results': content = `<div class="text-6xl mb-4">🤷</div><h3 class="text-xl font-semibold">${lang.statusNoResults}</h3><p class="text-gray-300">${lang.statusNoResultsSub}</p>`; break;
-                    case 'error': content = `<div class="text-6xl mb-4">⚠️</div><h3 class="text-xl font-semibold">${lang.statusError}</h3><p class="text-gray-300">${message}</p>`; break;
-                }
-                dom.statusContainer.innerHTML = content;
-            };
-
-            const displayResults = (results) => {
-                dom.statusContainer.innerHTML = '';
-                if (results.length === 0) return updateStatus('no-results');
-                results.forEach(item => {
-                    const card = createResultCard(item);
-                    dom.resultsGrid.appendChild(card);
-                });
-            };
-
-            const createResultCard = (item) => {
-                const card = document.createElement('div');
-                card.className = 'bg-gray-800 rounded-lg overflow-hidden shadow-lg card-hover animate-fade-in';
-                const title = item.title || item.name;
-                const year = (item.release_date || item.first_air_date || 'N/A').split('-')[0];
-                const posterPath = item.poster_path ? `${IMAGE_BASE_URL}${item.poster_path}` : 'https://placehold.co/500x750/1f2937/4b5563?text=No+Image';
-
-                card.innerHTML = `
-                    <div class="relative aspect-[2/3] bg-gray-700">
-                        <img src="${posterPath}" alt="${title}" class="w-full h-full object-cover" loading="lazy">
-                        <div class="absolute top-2 right-2 bg-black bg-opacity-70 px-2 py-1 rounded-full flex items-center text-xs">
-                            <i class="fa-solid fa-star text-yellow-400 mr-1"></i>
-                            <span class="font-bold">${item.vote_average.toFixed(1)}</span>
-                        </div>
-                    </div>
-                    <div class="p-4">
-                        <h3 class="font-semibold text-white mb-1 line-clamp-2">${title}</h3>
-                        <div class="text-gray-400 text-sm flex justify-between items-center">
-                            <span>${year}</span>
-                            <span class="flex items-center" title="${item.vote_count} ${translations[currentLang].cardVotes}">
-                                <i class="fa-solid fa-users mr-1"></i>
-                                ${item.vote_count}
-                            </span>
-                        </div>
-                    </div>`;
-                return card;
-            };
-            
-            const applyHiddenGemsPreset = () => {
-                dom.sortBy.value = 'vote_average.desc';
-                dom.startRating.value = 7.5;
-                dom.endRating.value = 10;
-                dom.startVoteCount.value = 50;
-                dom.endVoteCount.value = 1500;
-                                
-                updateRangeLabel(dom.ratingRangeLabel, dom.startRating, dom.endRating, dom.startRatingValue, dom.endRatingValue, 1)();
-                updateRangeLabel(dom.voteCountRangeLabel, dom.startVoteCount, dom.endVoteCount, dom.startVoteCountValue, dom.endVoteCountValue)();
                 
-                handleSearch();
+                document.querySelectorAll('.range-slider').forEach(slider => slider.addEventListener('input', () => updateSliderTrack(slider)));
+                
+                dom.magicQuizBtn.addEventListener('click', startQuiz);
+                dom.closeQuizBtn.addEventListener('click', closeQuiz);
             };
 
-            // --- INITIALIZATION ---
             const init = () => {
                 const initLang = getInitialLanguage();
                 dom.languageSelector.value = initLang;
                 setLanguage(initLang);
                 setupEventListeners();
+                
                 updateRangeLabel(dom.yearRangeLabel, dom.startYear, dom.endYear, dom.startYearValue, dom.endYearValue)();
                 updateRangeLabel(dom.ratingRangeLabel, dom.startRating, dom.endRating, dom.startRatingValue, dom.endRatingValue, 1)();
                 updateRangeLabel(dom.voteCountRangeLabel, dom.startVoteCount, dom.endVoteCount, dom.startVoteCountValue, dom.endVoteCountValue)();
-
-                // Nuevo: actualizar el color inicial de los sliders
                 document.querySelectorAll('.range-slider').forEach(slider => updateSliderTrack(slider));
             };
 
